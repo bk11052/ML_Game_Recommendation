@@ -1,7 +1,6 @@
 import numpy as np 
 import pandas as pd 
 import random
-from sklearn.model_selection import train_test_split
 
 # --- 1. 데이터 로드 및 전처리 (제시된 코드를 통합) ---
 try:
@@ -160,4 +159,5 @@ print("-------------------------------------------------------")
 print(f"  > 추천 게임 (Top {N_RECOMMEND}):")
 for i, title in enumerate(recommendations):
     print(f"    {i+1}. {title}")
+
 print("=======================================================")
