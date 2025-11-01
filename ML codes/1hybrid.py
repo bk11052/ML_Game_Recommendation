@@ -60,9 +60,9 @@ num_users_final = len(ratings_df_final['author_id'].unique())
 
 print(f"   -> [필터링 결과] 최종 유저 수: {num_users_final}, 최종 아이템 수: {num_items_final}")
 if num_items_final != 50:
-    print(f"⚠️ 경고: 아이템 수가 50개가 아닌 {num_items_final}개입니다. 데이터셋 특성입니다.")
+    print(f"경고: 아이템 수가 50개가 아닌 {num_items_final}개입니다. 데이터셋 특성입니다.")
 else:
-    print("✅ 아이템 수 50개 확정. 이대로 진행합니다.")
+    print("아이템 수 50개 확정. 이대로 진행합니다.")
 
 # 1.3. ID 매핑 및 희소 행렬 생성
 user_to_index = {uid: i for i, uid in enumerate(ratings_df_final['author_id'].unique())}
@@ -251,4 +251,5 @@ if user_p_hybrid is not None:
         print(f" {i}. 제목: {rec['title']} (App ID: {rec['app_id']})")
         print(f"    - **CF Score**: {rec['cf_score']:.4f}")
         print(f"    - **CBF Score (제목 유사성)**: {rec['cbf_score']:.4f}")
+
         print(f"    - **최종 Hybrid Score**: {rec['hybrid_score']:.4f}")
