@@ -65,7 +65,7 @@ class MatrixFactorizationWithBiases:
         self.reg = reg 
         self.epochs = epochs
         
-        # 🌟 핵심 추가: 전역 평균(mu), 유저 편향(bu), 아이템 편향(bi)
+        # 핵심 추가: 전역 평균(mu), 유저 편향(bu), 아이템 편향(bi)
         self.mu = self.R.data.mean()
         self.b_u = np.zeros(self.n_users)
         self.b_i = np.zeros(self.n_items)
@@ -84,11 +84,11 @@ class MatrixFactorizationWithBiases:
                 r_hat = self.mu + self.b_u[u] + self.b_i[i] + np.dot(self.P[u, :], self.Q[i, :])
                 e = r - r_hat 
                 
-                # 🌟 P, Q 업데이트 (기존 MF와 동일)
+                # P, Q 업데이트 (기존 MF와 동일)
                 self.P[u, :] += self.lr * (e * self.Q[i, :] - self.reg * self.P[u, :])
                 self.Q[i, :] += self.lr * (e * self.P[u, :] - self.reg * self.Q[i, :])
                 
-                # 🌟 핵심 추가: 편향 항 업데이트 (규칙이 더 간단함)
+                # 핵심 추가: 편향 항 업데이트 (규칙이 더 간단함)
                 self.b_u[u] += self.lr * (e - self.reg * self.b_u[u])
                 self.b_i[i] += self.lr * (e - self.reg * self.b_i[i])
 
@@ -142,10 +142,10 @@ rated_games_df = ratings_df_final[(ratings_df_final['author_id'] == test_user_id
 rated_titles = df_games[df_games['app_id'].isin(rated_games_df['app_id'])]['title'].tolist()
 
 print("\n" + "="*80)
-print("🌟 **CF with Biases (편향 추가된 행렬 분해) 추천 결과**")
+print("**CF with Biases (편향 추가된 행렬 분해) 추천 결과**")
 print("="*80)
-print(f"👤 **테스트 사용자 ID**: {test_user_id}")
-print(f"🎮 **사용자가 긍정 평가한 게임 (취향)**: {', '.join(rated_titles)}")
+print(f"**테스트 사용자 ID**: {test_user_id}")
+print(f"**사용자가 긍정 평가한 게임 (취향)**: {', '.join(rated_titles)}")
 print("-" * 40)
     
 # 순수한 문자열 포맷팅으로 표 출력
@@ -170,5 +170,6 @@ print("|" + "-" * (col_widths[0] + 2) + "|" + "-" * (col_widths[1] + 2) + "|" + 
 
 for row in cf_table_data:
     print(format_str.format(row[0], row[1], row[2]))
+
 
 print("\n💡 **분석:** 편향 항이 추가되어 아이템 인기도 영향이 분리되면서 순수한 취향 패턴 학습을 시도합니다.")
