@@ -51,7 +51,7 @@ ratings_df_final = ratings_df[ratings_df['author_id'].isin(user_counts[user_coun
 
 print("2. CF 피처(UserID, ItemID) 생성...")
 
-# 🌟 메모리 오류 수정: sparse_output=True 설정
+# 메모리 오류 수정: sparse_output=True 설정
 user_encoder = LabelBinarizer(sparse_output=True)
 item_encoder = LabelBinarizer(sparse_output=True)
 
@@ -85,7 +85,7 @@ def clean_text(text):
     text = re.sub(r'[^a-z0-9]', '', text)
     return text
 
-# 🌟 KeyError 수정: title만 사용
+# KeyError 수정: title만 사용
 df_merged['content_text'] = df_merged['title'].fillna('').apply(clean_text)
 
 # 3.3. TF-IDF 벡터화 (CBF 피처)
@@ -107,8 +107,8 @@ labels = df_merged['rating'].values
 print("\n" + "="*80)
 print("🎉 **Factorization Machines 통합 피처셋 구성 완료**")
 print("="*80)
-print(f"✅ 총 상호작용(리뷰) 수: {len(labels)}")
-print(f"✅ 통합 피처 매트릭스 크기 (상호작용 수 x 총 피처 차원): {fm_input_features.shape}")
+print(f"총 상호작용(리뷰) 수: {len(labels)}")
+print(f"통합 피처 매트릭스 크기 (상호작용 수 x 총 피처 차원): {fm_input_features.shape}")
 
 # 피처 구성 요약
 n_users_final = user_features.shape[1]
@@ -119,4 +119,5 @@ print(f"   - CF (유저) 피처 수: {n_users_final}")
 print(f"   - CF (아이템) 피처 수: {n_items_final}")
 print(f"   - CBF (콘텐츠) 피처 수: {n_cbf_final}")
 print("-" * 40)
-print("💡 **분석:** 이 코드는 메모리 효율적인 희소 행렬 형태로 FM 모델 입력 데이터를 구성했습니다.")
+
+print("**분석:** 이 코드는 메모리 효율적인 희소 행렬 형태로 FM 모델 입력 데이터를 구성했습니다.")
