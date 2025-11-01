@@ -108,7 +108,7 @@ def clean_text(text):
     text = re.sub(r'[^a-z0-9]', '', text)
     return text
 
-# 🌟 핵심 수정: 'developer', 'publisher' 컬럼이 없어 발생한 KeyError를 회피.
+# 핵심 수정: 'developer', 'publisher' 컬럼이 없어 발생한 KeyError를 회피.
 #             현재는 'title' 컬럼만 사용하여 CBF 특징을 생성합니다.
 df_content['content_text'] = df_content['title'].fillna('').apply(clean_text) 
 
@@ -185,8 +185,8 @@ print("\n" + "="*80)
 # 'CBF 강화'라는 표현은 유지하되, 현재는 Title만 사용했음을 인지해야 함
 print("🎉 **CBF 강화 하이브리드 결과: (Title 기반 유사도 사용)**")
 print("="*80)
-print(f"👤 **테스트 사용자 ID**: {test_user_id}")
-print(f"🎮 **사용자가 긍정 평가한 게임 (취향)**: {', '.join(rated_titles)}")
+print(f"**테스트 사용자 ID**: {test_user_id}")
+print(f"**사용자가 긍정 평가한 게임 (취향)**: {', '.join(rated_titles)}")
 print("-" * 40)
     
 # 순수한 문자열 포맷팅으로 표 출력 (tabulate 미사용)
@@ -213,4 +213,5 @@ print("|" + "-" * (col_widths[0] + 2) + "|" + "-" * (col_widths[1] + 2) + "|" + 
 
 # 데이터 출력
 for row in hybrid_table_data:
+
     print(format_str.format(row[0], row[1], row[2], row[3], row[4]))
