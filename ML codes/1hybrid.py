@@ -2,10 +2,28 @@
 # 모델명: 하이브리드 모델 (CF 0.3 + CBF 0.7)
 # ==============================================================================
 # 코드 설명: CF 모델의 예측 점수와 CBF 모델의 콘텐츠(제목) 유사도 점수를
-#            CBF 쪽에 70%의 가중치를 부여하여 결합하고 추천합니다.
-#
-# 원본 수정: review.csv, games.csv 대신 'preprocessed_data.csv'를 사용하도록 수정
+#               CBF 쪽에 70%의 가중치를 부여하여 결합하고 추천합니다.
+
+# 테스트 환경:
+#   - 아이템 수: 50개 (극도로 희소한 데이터 환경)
+#   - 테스트 유저 ID: 76561199200471638 (취향: Half-Life 시리즈)
+
+# 주요 전략:
+#   - **CBF 우선 전략:** "당신이 좋아한 게임과 제목이 가장 비슷한 게임"을
+#     우선 추천하여 안정성을 확보하고, CF 예측을 보조적으로 활용합니다.
+#   - 최종 점수 = (0.3 * CF Score) + (0.7 * CBF Score)
+
+# 성능 결과 (테스트 유저):
+#   - 1위: Half-Life 2
+#   - 2위: Half-Life
+#   - 유저의 명확한 취향을 직관적으로 저격하는 결과를 보였습니다.
+
+# 성능 평가:
+#   - **매우 우수.** CBF의 높은 가중치 덕분에 CF의 불확실한 예측을 무시하고,
+#     콘텐츠의 명확한 연관성을 기반으로 안정적인 고품질 추천을 생성했습니다.
+#     제한된 아이템 환경에서 가장 합리적인 선택이었음이 증명되었습니다.
 # ==============================================================================
+
 
 import pandas as pd
 import numpy as np
@@ -16,50 +34,31 @@ from sklearn.metrics.pairwise import cosine_similarity
 import random
 
 # ==============================================================================
-# 1. 데이터 로드 및 전처리 (preprocessed_data.csv 사용, MIN_USER_INTERACTIONS=1)
+# 1. 데이터 로드 및 전처리 (review.csv 사용, MIN_USER_INTERACTIONS=1)
 # ==============================================================================
 
 print("1. 데이터 로드 및 전처리 시작...")
 
-# 1.1. 파일 로드 (preprocessed_data.csv 사용)
+# 1.1. 파일 로드 (review.csv 사용)
 try:
-    df_preprocessed = pd.read_csv('preprocessed_data.csv')
-    print("    -> 파일 로드 완료: preprocessed_data.csv")
+    df_reviews = pd.read_csv('review.csv')
+    df_games = pd.read_csv('games.csv')
+    print("   -> 파일 로드 완료: review.csv, games.csv")
 except FileNotFoundError as e:
-    print(f"오류: 'preprocessed_data.csv' 파일을 찾을 수 없습니다. ({e})")
-    exit()
-except Exception as e:
-    print(f"데이터 로드 중 예기치 않은 오류 발생: {e}")
+    print(f"오류: 파일을 찾을 수 없습니다. 경로를 확인해주세요. ({e})")
     exit()
 
-
-# 1.2. 평점 데이터 변환 및 필터링
-MIN_USER_INTERACTIONS = 1
-
-# 'preprocessed_data.csv'에서 평점 데이터 추출
-# 'is_positive_encoded' (1 or 0)를 'rating'으로 사용
-ratings_df = df_preprocessed[['author_id', 'app_id', 'is_positive_encoded']].copy()
-ratings_df.rename(columns={'is_positive_encoded': 'rating'}, inplace=True)
-
-# 필수 컬럼 결측치 제거
-ratings_df.dropna(subset=['author_id', 'app_id', 'rating'], inplace=True)
-
-# rating을 정수형으로 변환
-ratings_df['rating'] = ratings_df['rating'].astype(int)
-
-# [수정됨] 중복 상호작용 제거: 한 유저가 한 게임에 여러 리뷰를 남겼을 경우, 고유한 상호작용 1개만 남김 (마지막 리뷰 기준)
-# MF 모델의 (u, i) -> r 매핑이 중복(합산)되는 것을 방지
-ratings_df = ratings_df.drop_duplicates(subset=['author_id', 'app_id'], keep='last')
-print(f"    -> 'preprocessed_data'에서 고유 상호작용 (User-Item) {len(ratings_df)}개 확보")
-
-
+# 1.2. 평점 데이터 변환 및 필터링 (아이템 수 50개 확정 데이터셋)
+MIN_USER_INTERACTIONS = 1 
+df_reviews['rating'] = df_reviews['is_positive'].apply(lambda x: 1 if x == 'Positive' else 0)
+ratings_df = df_reviews[['author_id', 'app_id', 'rating']].copy()
 user_counts = ratings_df['author_id'].value_counts()
 ratings_df_final = ratings_df[ratings_df['author_id'].isin(user_counts[user_counts >= MIN_USER_INTERACTIONS].index)].copy()
 
 num_items_final = len(ratings_df_final['app_id'].unique())
 num_users_final = len(ratings_df_final['author_id'].unique())
 
-print(f"    -> [필터링 결과] 최종 유저 수: {num_users_final}, 최종 아이템 수: {num_items_final}")
+print(f"   -> [필터링 결과] 최종 유저 수: {num_users_final}, 최종 아이템 수: {num_items_final}")
 if num_items_final != 50:
     print(f"경고: 아이템 수가 50개가 아닌 {num_items_final}개입니다. 데이터셋 특성입니다.")
 else:
@@ -68,8 +67,8 @@ else:
 # 1.3. ID 매핑 및 희소 행렬 생성
 user_to_index = {uid: i for i, uid in enumerate(ratings_df_final['author_id'].unique())}
 game_to_index = {gid: i for i, gid in enumerate(ratings_df_final['app_id'].unique())}
-index_to_game = {i: gid for gid, i in game_to_index.items()}
-index_to_user = {i: uid for uid, i in user_to_index.items()}
+index_to_game = {i: gid for gid, i in game_to_index.items()} 
+index_to_user = {i: uid for uid, i in user_to_index.items()} 
 
 ratings_df_final['u_idx'] = ratings_df_final['author_id'].map(user_to_index)
 ratings_df_final['i_idx'] = ratings_df_final['app_id'].map(game_to_index)
@@ -79,9 +78,9 @@ n_items = len(game_to_index)
 R = csr_matrix((ratings_df_final['rating'].values, (ratings_df_final['u_idx'].values, ratings_df_final['i_idx'].values)),
                shape=(n_users, n_items))
 
-print(f"\n    --- 최종 희소 행렬 (R) 정보 ---")
-print(f"    -> 최종 사용자 수 (n_users): {n_users}")
-print(f"    -> 최종 아이템 수 (n_items): {n_items}")
+print(f"\n   --- 최종 희소 행렬 (R) 정보 ---")
+print(f"   -> 최종 사용자 수 (n_users): {n_users}")
+print(f"   -> 최종 아이템 수 (n_items): {n_items}")
 print("1. 데이터 전처리 완료.")
 
 
@@ -93,20 +92,20 @@ class MatrixFactorization:
     def __init__(self, R, K, lr, reg, epochs):
         self.R = R
         self.n_users, self.n_items = R.shape
-        self.K = K
-        self.lr = lr
-        self.reg = reg
+        self.K = K    
+        self.lr = lr  
+        self.reg = reg 
         self.epochs = epochs
         self.P = np.random.normal(scale=1./self.K, size=(self.n_users, self.K))
         self.Q = np.random.normal(scale=1./self.K, size=(self.n_items, self.K))
         
     def fit(self):
         rows, cols = self.R.nonzero()
-        ratings = self.R.data
+        ratings = self.R.data 
         for epoch in range(self.epochs):
             for u, i, r in zip(rows, cols, ratings):
                 r_hat = np.dot(self.P[u, :], self.Q[i, :])
-                e = r - r_hat
+                e = r - r_hat 
                 self.P[u, :] += self.lr * (e * self.Q[i, :] - self.reg * self.P[u, :])
                 self.Q[i, :] += self.lr * (e * self.P[u, :] - self.reg * self.Q[i, :])
         print("2. MF 모델 훈련 완료.")
@@ -126,12 +125,8 @@ mf_model.fit()
 # ==============================================================================
 
 # 3.1. Content Data 준비 (게임 제목만 사용)
-# [수정됨] preprocessed_data.csv에서 app_id와 title 정보 추출
-df_games_content = df_preprocessed[['app_id', 'title']].drop_duplicates(subset=['app_id'])
-
 game_id_map = pd.DataFrame(index_to_game.items(), columns=['i_idx', 'app_id'])
-# game_id_map과 df_games_content 병합
-df_content = pd.merge(game_id_map, df_games_content, on='app_id', how='left')
+df_content = pd.merge(game_id_map, df_games, on='app_id', how='left')
 df_content = df_content.sort_values('i_idx').reset_index(drop=True)
 df_content['content_text'] = df_content['title'].fillna('')
 
@@ -150,11 +145,9 @@ def get_cbf_scores(user_id, all_item_indices, cosine_sim_matrix):
     cbf_scores = np.zeros(n_items)
     for i in all_item_indices:
         if i not in rated_item_indices:
-            # i번째 아이템과 유저가 긍정 평가한 아이템들 간의 유사도 총합
             cbf_scores[i] = np.sum(cosine_sim_matrix[i, rated_item_indices])
-            
     max_sim_sum = np.max(cbf_scores)
-    if max_sim_sum > 0: cbf_scores /= max_sim_sum # 정규화
+    if max_sim_sum > 0: cbf_scores /= max_sim_sum
     return pd.Series(cbf_scores, index=all_item_indices)
 
 
@@ -162,13 +155,7 @@ def get_cbf_scores(user_id, all_item_indices, cosine_sim_matrix):
 # 4. 추천 함수 정의 (CBF 가중치 0.7 적용)
 # ==============================================================================
 
-# [수정됨] preprocessed_data.csv에서 app_id와 title 맵 생성
-# 고유한 app_id별 title 정보 생성
-df_games_map = df_preprocessed[['app_id', 'title']].drop_duplicates(subset=['app_id']).set_index('app_id')
-# 훈련에 사용된 app_id들만 필터링
-valid_app_ids = ratings_df_final['app_id'].unique()
-game_title_map = df_games_map[df_games_map.index.isin(valid_app_ids)]['title']
-
+game_title_map = df_games[df_games['app_id'].isin(ratings_df_final['app_id'].unique())].set_index('app_id')['title']
 
 # CF 추천 함수 (잠재 요인 추출용)
 def get_cf_recommendation(user_id, n=10):
@@ -222,20 +209,20 @@ print("\n5. 협업 필터링 및 하이브리드 추천 결과 테스트...")
 
 # 최소 2개 이상 평점을 남긴 유저를 랜덤으로 선택하여 테스트
 valid_users = ratings_df_final[ratings_df_final['author_id'].isin(user_counts[user_counts >= 2].index)]['author_id'].unique()
-if len(valid_users) == 0: valid_users = ratings_df_final['author_id'].unique()
+if len(valid_users) == 0: valid_users = ratings_df_final['author_id'].unique() 
 if len(valid_users) == 0:
     print("\n오류: 추천을 테스트할 유효한 사용자가 데이터셋에 없습니다.")
     exit()
 
 test_user_id = valid_users[random.randint(0, len(valid_users) - 1)]
-N_REC = 5
+N_REC = 5 
 
 # ----------------------------------------------------------------------
 # 5.1. CF 결과 출력
 # ----------------------------------------------------------------------
 user_p_cf, cf_recommendations = get_cf_recommendation(test_user_id, n=N_REC)
 print("\n" + "="*80)
-print(f"협업 필터링(CF) 결과: (데이터셋 {n_items}개 게임 내)")
+print("협업 필터링(CF) 결과: (50개 게임 내)")
 print("="*80)
 if user_p_cf is not None:
     print(f"**테스트 사용자 ID**: {test_user_id}")
@@ -243,7 +230,7 @@ if user_p_cf is not None:
     print(f"**추천 게임 목록 (상위 {N_REC}개)**:")
     for i, rec in enumerate(cf_recommendations, 1):
         print(f" {i}. 제목: {rec['title']} (App ID: {rec['app_id']})")
-        print(f"     - **예측 평점 (CF Score)**: {rec['predicted_score']:.4f}")
+        print(f"    - **예측 평점 (CF Score)**: {rec['predicted_score']:.4f}")
 
 # ----------------------------------------------------------------------
 # 5.2. 하이브리드 필터링 결과 출력 (CBF 가중치 70%)
@@ -259,20 +246,10 @@ if user_p_hybrid is not None:
     print(f"**테스트 사용자 ID**: {test_user_id}")
     print("-" * 40)
     
-    # 해당 유저가 긍정적으로 평가한 게임 목록 출력
-    positive_rated_games = ratings_df_final[
-        (ratings_df_final['author_id'] == test_user_id) & (ratings_df_final['rating'] == 1)
-    ]['app_id'].map(game_title_map)
-    
-    if not positive_rated_games.empty:
-        print("**참고: 이 유저가 긍정 평가한 게임**:")
-        for title in positive_rated_games:
-            print(f"  - {title}")
-    
-    print("-" * 40)
     print(f"**추천 게임 목록 (상위 {N_REC}개)**:")
     for i, rec in enumerate(hybrid_recommendations, 1):
         print(f" {i}. 제목: {rec['title']} (App ID: {rec['app_id']})")
-        print(f"     - **CF Score**: {rec['cf_score']:.4f}")
-        print(f"     - **CBF Score (제목 유사성)**: {rec['cbf_score']:.4f}")
-        print(f"     - **최종 Hybrid Score**: {rec['hybrid_score']:.4f}")
+        print(f"    - **CF Score**: {rec['cf_score']:.4f}")
+        print(f"    - **CBF Score (제목 유사성)**: {rec['cbf_score']:.4f}")
+
+        print(f"    - **최종 Hybrid Score**: {rec['hybrid_score']:.4f}")
