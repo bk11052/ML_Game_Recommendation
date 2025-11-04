@@ -32,15 +32,17 @@ ratings_df['i_idx'] = ratings_df['app_id'].map(game_to_index)
 
 n_users, n_items = len(user_to_index), len(game_to_index)
 
-R = csr_matrix((ratings_df['rating'].values, (ratings_df['u_idx'].values, ratings_df['i_idx'].values)),
-               shape=(n_users, n_items))
+R = csr_matrix(
+    (ratings_df['rating'].values, (ratings_df['u_idx'].values, ratings_df['i_idx'].values)),
+    shape=(n_users, n_items)
+)
 
 # ==============================================================================
 # 2. CF (Matrix Factorization)
 # ==============================================================================
 
 class MatrixFactorization:
-    def __init__(self, R, K=20, lr=0.01, reg=0.01, epochs=30):
+    def __init__(self, R, K=20, lr=0.01, reg=0.01, epochs=10):  # epochs 30 → 10으로 속도 개선
         self.R = R
         self.n_users, self.n_items = R.shape
         self.K = K
@@ -54,11 +56,15 @@ class MatrixFactorization:
         rows, cols = self.R.nonzero()
         ratings = self.R.data
         for epoch in range(self.epochs):
+            loss = 0
             for u, i, r in zip(rows, cols, ratings):
                 r_hat = np.dot(self.P[u, :], self.Q[i, :])
                 e = r - r_hat
+                loss += e**2
                 self.P[u, :] += self.lr * (e * self.Q[i, :] - self.reg * self.P[u, :])
                 self.Q[i, :] += self.lr * (e * self.P[u, :] - self.reg * self.Q[i, :])
+            if epoch % 2 == 0:
+                print(f"Epoch {epoch}: Loss = {loss:.4f}")
         print("MF 학습 완료.")
 
     def predict_all(self, u_idx):
@@ -80,26 +86,31 @@ def clean_text(text):
 df_games['clean_title'] = df_games['title'].apply(clean_text)
 
 # --- (1) TF-IDF 유사도 ---
-tfidf = TfidfVectorizer(token_pattern=r'\b\w{2,}\b')
+tfidf = TfidfVectorizer(token_pattern=r'\b\w{2,}\b', max_features=5000)
 tfidf_matrix = tfidf.fit_transform(df_games['clean_title'])
 tfidf_sim = cosine_similarity(tfidf_matrix)
 
 # --- (2) Word2Vec 임베딩 ---
 tokenized_titles = [t.split() for t in df_games['clean_title']]
+
+print("Word2Vec 학습 중...")
 w2v_model = Word2Vec(sentences=tokenized_titles, vector_size=50, window=3, min_count=1, sg=1, workers=4)
 
 def get_w2v_vector(tokens):
-    vectors = [w2v_model.wv[word] for word in tokens if word in w2v_model.wv]
+    """단어 리스트의 평균 Word2Vec 벡터 계산 (빈 단어는 0벡터로 대체)"""
+    vectors = [w2v_model.wv[w] for w in tokens if w in w2v_model.wv]
     if len(vectors) == 0:
-        return np.zeros(50)
+        return np.zeros(w2v_model.vector_size)
     return np.mean(vectors, axis=0)
 
-w2v_vectors = np.array([get_w2v_vector(tokens) for tokens in tokenized_titles])
+print("Word2Vec 벡터 계산 중...")
+w2v_vectors = np.vstack([get_w2v_vector(tokens) for tokens in tokenized_titles])  # np.array → np.vstack (안정화)
 w2v_sim = cosine_similarity(w2v_vectors)
 
 # --- (3) K-Means 클러스터링 ---
 NUM_CLUSTERS = 5
-kmeans = KMeans(n_clusters=NUM_CLUSTERS, random_state=42)
+print("K-Means 클러스터링 수행 중...")
+kmeans = KMeans(n_clusters=NUM_CLUSTERS, random_state=42, n_init=10)
 df_games['cluster'] = kmeans.fit_predict(w2v_vectors)
 
 # ==============================================================================
