@@ -1,6 +1,7 @@
 # ML_Game_Recommendation
 
 #Gemini 활용한 코드 설명
+
 1단계: '전문가' 2명 훈련 (Level 0)
 추천을 하기 전에, 먼저 2명의 '전문가'가 훈련 데이터(preprocessed_data.csv)를 학습합니다.
 
