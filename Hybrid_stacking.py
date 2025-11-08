@@ -20,7 +20,7 @@ warnings.filterwarnings('ignore')
 print("1. 데이터 로드 및 전처리 시작...")
 
 try:
-    df_preprocessed = pd.read_csv('/Lab1/ML_T.P/preprocessed_data.csv')
+    df_preprocessed = pd.read_csv('preprocessed_data.csv')
     print("    -> 파일 로드 완료: preprocessed_data.csv")
 except FileNotFoundError as e:
     print(f"오류: 'preprocessed_data.csv' 파일을 찾을 수 없습니다. ({e})")
