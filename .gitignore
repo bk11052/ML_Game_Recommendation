@@ -27,6 +27,8 @@ data/*.csv
 # Results
 results/*
 !results/.gitkeep
+!results/eda_visualizations/
+!results/eda_visualizations/*.png
 
 # IDE
 .vscode/
