@@ -24,8 +24,7 @@ ML/
 ├── src/
 │   ├── data_integration.py      # 데이터 병합
 │   ├── data_preprocessing.py    # 데이터 전처리
-│   ├── data_eda.py              # 탐색적 데이터 분석
-│   └── run_eval_preprocessed.py # 평가 프레임워크
+│   └── data_eda.py              # 탐색적 데이터 분석
 ├── models/
 │   ├── cf_baseline.py           # CF 베이스라인
 │   ├── cbf_baseline.py          # CBF 베이스라인
@@ -33,8 +32,16 @@ ML/
 │   ├── hybrid_stacking.py       # Stacking 하이브리드 (학습 기반)
 │   ├── factorization_machines.py # Factorization Machines
 │   └── word_embeddings.py       # Word2Vec 기반 CBF
+├── evaluation/
+│   ├── adapters.py      # CBF / CF / Hybrid 모델 클래스 정의 (공통 인터페이스)
+│   ├── build_predictions.py    # 각 모델로 추천 생성
+│   ├── eval_f1_ndcg.py       # 예측 결과 기반으로 F1@K / nDCG@K 계산 및 시각화 
+│   ├── evaluate_requested_models.py    # 여러 모델(CBF/CF/FM/Hybrid/WordEmb 등) 일괄 평가 및 plot 생성
+│   └── make_results_consistent.py            # train/test split 및 후보군 정규화
 └── results/
     └── .gitkeep                 # 평가 결과 저장 위치
+
+# 평가 프레임워크
 ```
 
 ## 🔧 설치 및 실행
