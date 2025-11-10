@@ -7,7 +7,7 @@ import seaborn as sns
 plt.rcParams['axes.unicode_minus'] = False
 
 # 데이터 읽기
-df = pd.read_csv('merged_data.csv', na_values=['', ' ', 'NA', 'N/A', 'null', 'None'])
+df = pd.read_csv('../data/merged_data.csv', na_values=['', ' ', 'NA', 'N/A', 'null', 'None'])
 
 print("=" * 50)
 print("1. 데이터 기본 정보")
