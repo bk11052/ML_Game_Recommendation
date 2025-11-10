@@ -17,7 +17,14 @@ print("=" * 80)
 print("GAMES.CSV - 게임 메타데이터 분석")
 print("=" * 80)
 print("\n데이터 로드 중...")
-df = pd.read_csv('../data/games.csv')
+
+# 스크립트 위치에 따라 경로 자동 조정
+import sys
+script_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(script_dir)
+data_path = os.path.join(project_root, 'data', 'games.csv')
+
+df = pd.read_csv(data_path)
 print("✓ 데이터 로드 완료\n")
 
 # ============================================================================
@@ -231,7 +238,7 @@ print("\n" + "=" * 80)
 print("12. 시각화 생성")
 print("=" * 80)
 
-output_dir = '../results/eda_games_visualizations'
+output_dir = os.path.join(project_root, 'results', 'eda_games_visualizations')
 os.makedirs(output_dir, exist_ok=True)
 
 sns.set_style("whitegrid")

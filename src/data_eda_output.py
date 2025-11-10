@@ -18,7 +18,14 @@ print("=" * 80)
 print("OUTPUT.CSV - 리뷰 데이터 분석")
 print("=" * 80)
 print("\n데이터 로드 중...")
-df = pd.read_csv('../data/output.csv')
+
+# 스크립트 위치에 따라 경로 자동 조정
+import sys
+script_dir = os.path.dirname(os.path.abspath(__file__))
+project_root = os.path.dirname(script_dir)
+data_path = os.path.join(project_root, 'data', 'output.csv')
+
+df = pd.read_csv(data_path)
 print("✓ 데이터 로드 완료\n")
 
 # ============================================================================
@@ -280,7 +287,7 @@ print("\n" + "=" * 80)
 print("12. 시각화 생성")
 print("=" * 80)
 
-output_dir = '../results/eda_output_visualizations'
+output_dir = os.path.join(project_root, 'results', 'eda_output_visualizations')
 os.makedirs(output_dir, exist_ok=True)
 
 sns.set_style("whitegrid")
