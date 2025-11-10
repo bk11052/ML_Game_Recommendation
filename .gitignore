@@ -29,6 +29,10 @@ results/*
 !results/.gitkeep
 !results/eda_visualizations/
 !results/eda_visualizations/*.png
+!results/eda_games_visualizations/
+!results/eda_games_visualizations/*.png
+!results/eda_output_visualizations/
+!results/eda_output_visualizations/*.png
 
 # IDE
 .vscode/
