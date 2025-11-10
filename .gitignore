@@ -1,0 +1,49 @@
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+ENV/
+*.egg-info/
+dist/
+build/
+
+# Jupyter Notebook
+.ipynb_checkpoints
+
+# Data files (too large)
+*.csv
+!data/.gitkeep
+data/*.csv
+
+# Model files
+*.pkl
+*.h5
+*.model
+
+# Results
+results/*
+!results/.gitkeep
+!results/eda_visualizations/
+!results/eda_visualizations/*.png
+!results/eda_games_visualizations/
+!results/eda_games_visualizations/*.png
+!results/eda_output_visualizations/
+!results/eda_output_visualizations/*.png
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

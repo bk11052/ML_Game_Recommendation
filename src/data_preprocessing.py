@@ -3,7 +3,7 @@ import numpy as np
 from sklearn.preprocessing import MinMaxScaler
 
 # 병합된 데이터 읽기
-merged_df = pd.read_csv('merged_data.csv')
+merged_df = pd.read_csv('../data/merged_data.csv')
 
 print(f"원본 데이터 행 수: {len(merged_df)}")
 print(f"원본 데이터 열 수: {len(merged_df.columns)}")
@@ -134,5 +134,5 @@ print(f"\n전처리된 데이터 정보:")
 preprocessed_df.info()
 
 # 전처리된 데이터 저장
-preprocessed_df.to_csv('preprocessed_data.csv', index=False)
-print("\n'preprocessed_data.csv' 파일로 저장 완료!")
+preprocessed_df.to_csv('../data/preprocessed_data.csv', index=False)
+print("\n'../data/preprocessed_data.csv' 파일로 저장 완료!")
